@@ -1,19 +1,24 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
 import { useEffect, useState } from "react";
-import type { userType } from "../routes.ts";
 import type App from "~/root";
 import { Link } from "react-router";
 import { redirect } from "react-router";
+import type { userType } from "~/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
+    { title: "Emoji GUess" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }
 
 export default function Home() {
+
+  const [stats, setStats] = useState<userType>()
+  const [joindropDown, setjoinDropDown] = useState(false)
+  const [codeDD, setcodeDD] = useState(false)
+
   useEffect(()=>{
     const userString : string | null = localStorage.getItem("EmojiGuessUser")
     if(userString){
@@ -21,7 +26,30 @@ export default function Home() {
       setStats(userJSON)
     } 
   }, [])
-  const [stats, setStats] = useState<userType>()
+
+  function handleNavigate(guesser: boolean){
+    console.log(guesser)
+  }
+
+  function handleCodeNavigate(code: string){
+    console.log(code)
+  }
+
+  function handleNameSet(name: string){
+    console.log(name)
+    const userString : string | null = localStorage.getItem("EmojiGuessUser")
+    if(userString){
+      const userJSON : userType = JSON.parse(userString)
+      userJSON['name'] = name;
+      localStorage.setItem("EmojiGuessUser", JSON.stringify(userJSON))
+      setStats(userJSON)
+    } else {
+      const newString : userType= {name: name, wins: 0}
+      localStorage.setItem("EmojiGuessUser", JSON.stringify(newString))
+      setStats(newString)
+    }
+  }
+
   return (
     <>
     <div className="flex items-center justify-center w-screen">
@@ -33,21 +61,63 @@ export default function Home() {
             "Welcome to Emoji Guess! 👋"
             }
             </h1>
-          <div className='bg-emerald-950 rounded-4xl'>
+          <div className='bg-emerald-700 rounded-4xl items-center flex flex-col'>
             {stats ? 
             <h2 className='text-3xl font-bold pt-6'>Total Wins: {stats.wins}</h2>
             :
-            <p className="text-center">Sign Up</p>
+            <>
+            <div className="flex flex-col items-center">
+            <p className="text-center text-xl font-bold">Sign Up Below</p>
+            <form onSubmit={(e) =>{
+              e.preventDefault();
+              handleNameSet(e.target[0].value)
+            } 
+            }>
+              <input className="bg-stone-900 border-4 rounded-2xl w-lg p-2" placeholder="Type name here"></input>
+            </form>
+            </div>
+            </>
             }
             <div className='flex flex-col gap-4 p-7 *:m-3 items-center'>
-              <Link to="/game" className="w-md">
-                <button className="w-full">
+              <div className="flex flex-col items-center gap-2 bg-emerald-900  rounded-4xl w-full">
+                { joindropDown ? 
+                <>
+                  <div className="flex flex-row gap-2 ">
+                    <button onClick={()=>handleNavigate(true)}>Join as Guesser</button>
+                    <button onClick={()=>handleNavigate(false)}>Join as Teller</button>
+                  </div>
+                </>
+                :
+                <>
+                <button onClick={(e) => {
+                  e.preventDefault()
+                  setjoinDropDown(!joindropDown)
+                  }}>
                   Join Game
                 </button>
-              </Link>
-                <button>
-                  <p>Join Room with Code</p>
+                </>
+                }
+                </div>
+                { codeDD ? 
+                <>
+                  <form onSubmit={(e) =>{
+                    e.preventDefault();
+                    handleCodeNavigate(e.target[0].value)
+                  } 
+                  }>
+                    <input className="bg-stone-900 border-4 rounded-2xl w-md p-2" placeholder="Type code here"></input>
+                  </form>
+                </>
+                :
+                <>
+                <button onClick={(e) => {
+                  e.preventDefault()
+                  setcodeDD(!codeDD)
+                  }}>
+                  Join Room with Code
                 </button>
+                </>
+                }
                 <button>
                   <p>Create Room</p>
                 </button>
