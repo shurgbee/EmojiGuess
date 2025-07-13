@@ -1,10 +1,11 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import type App from "~/root";
 import { Link } from "react-router";
 import { redirect } from "react-router";
 import type { userType } from "~/types";
+import useWebSocket from "react-use-websocket";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,17 +19,57 @@ export default function Home() {
   const [stats, setStats] = useState<userType>()
   const [joindropDown, setjoinDropDown] = useState(false)
   const [codeDD, setcodeDD] = useState(false)
+  const [firstLoad, setfirstLoad] = useState(false)
+  
+  const {sendJsonMessage, lastMessage, readyState} = useWebSocket('ws://localhost:8000/ws/match', {
+    share: false,
+    shouldReconnect : () => true,
+  })
 
-  useEffect(()=>{
+  useEffect(() => {
+    if(firstLoad){
+      console.log("current state is "+readyState)
+    }
+  }, [readyState])
+
+  useEffect(() => {
     const userString : string | null = localStorage.getItem("EmojiGuessUser")
     if(userString){
       const userJSON = JSON.parse(userString)
       setStats(userJSON)
     } 
+    setfirstLoad(true)
+    {
+      return () => {
+
+      }
+    }
   }, [])
 
-  function handleNavigate(guesser: boolean){
-    console.log(guesser)
+  useEffect(()=>{
+    if(firstLoad){
+      if(lastMessage){
+        messageJson : JSON = JSON.parse(lastMessage.data)
+        console.log('received data', lastMessage.data)
+        redirect('/game/'+lastMessage.data['room'])
+      }
+    }
+  },[lastMessage])
+
+  async function handleNavigate(guesser: boolean){
+    if(firstLoad){
+      const sendJson = {
+        "name": stats?.name,
+        "guesser": guesser
+      }
+      sendJsonMessage(sendJson)
+      const joinJson = {
+        "cmd": "join"
+      }
+      sendJsonMessage(joinJson)
+    } else {
+      console.log("hello")
+    }
   }
 
   function handleCodeNavigate(code: string){
@@ -56,7 +97,7 @@ export default function Home() {
       <div className="flex flex-col self-center">
           <h1 className='font-black mb-6'>
             {stats ? 
-            "Welcome Back" + stats.name
+            "Welcome Back " + stats.name
             :
             "Welcome to Emoji Guess! 👋"
             }
@@ -70,7 +111,9 @@ export default function Home() {
             <p className="text-center text-xl font-bold">Sign Up Below</p>
             <form onSubmit={(e) =>{
               e.preventDefault();
-              handleNameSet(e.target[0].value)
+              const form = e.currentTarget as HTMLFormElement;
+              const input = form.elements[0] as HTMLInputElement;
+              handleNameSet(input.value)
             } 
             }>
               <input className="bg-stone-900 border-4 rounded-2xl w-lg p-2" placeholder="Type name here"></input>
@@ -102,7 +145,9 @@ export default function Home() {
                 <>
                   <form onSubmit={(e) =>{
                     e.preventDefault();
-                    handleCodeNavigate(e.target[0].value)
+                    const form = e.currentTarget as HTMLFormElement;
+                    const input = form.elements[0] as HTMLInputElement;
+                    handleCodeNavigate(input.value)
                   } 
                   }>
                     <input className="bg-stone-900 border-4 rounded-2xl w-md p-2" placeholder="Type code here"></input>

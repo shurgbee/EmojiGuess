@@ -1,9 +1,8 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
 import { useEffect, useState } from "react";
-import type { userType } from "../routes.ts";
 import type App from "~/root";
-import useWebSocket from "react-use-websocket";
+import useWebSocket, {ReadyState} from "react-use-websocket";
 import { data } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
@@ -13,10 +12,12 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function Game() {
+export default function Game({ params }: Route.LoaderArgs) {
+  console.log(params)
   const WS_URL = 'ws://localhost:8000/ws'
-  const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL) 
+  const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL)
   useEffect(()=>{
+
   }, [])
 
 

@@ -54,11 +54,11 @@ class Room:
                 "cmd": "start",
                 "word": self.word
             }
-            self.teller.player.send_json(tellerJson)
+            await self.teller.player.send_json(tellerJson)
             guesserJson = {
                 "cmd": "start"
             }
-            self.guesser.player.send_json(guesserJson)
+            await self.guesser.player.send_json(guesserJson)
             self.timer = asyncio.create_task(self.countdown())
             await self.end()
         else: 
@@ -81,16 +81,17 @@ class ConnectionManager:
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        data : JSONResponse= await websocket.receive_json() 
+        data : JSONResponse= await websocket.receive_json()
+        print(data) 
         name = data['name']
         isGuesser : bool = data['guesser']
         player = Player(websocket, name, isGuesser)
         self.active_connections.append(websocket)
         return player
 
-    def queue(self, player: Player):
+    async def queue(self, player: Player):
         self.guesserQueue.append(player) if player.guesser else self.tellerQueue.append(player)
-        self.instantiateRoom()
+        return await self.instantiateRoom()
 
     def disconnect(self, player: Player):
         self.active_connections.remove(player.player)
@@ -110,19 +111,21 @@ class ConnectionManager:
             guesser = self.guesserQueue.pop(0)
             teller = self.tellerQueue.pop(0)
             room = Room(guesser, teller)
-            self.routing(self.guesserQueue[0], room)
-            self.routing(self.tellerQueue[0], room)
+            await self.routing(guesser, room)
+            await self.routing(teller, room)
+            print("yes")
             return room
         else:
+            print("no")
             return None
 
     async def broadcast(self, websocket: WebSocket, message: str):
         for conn in self.active_connections:
             await conn.send_text(message)
 
-    def routing(player: Player, room: Room):
+    async def routing(self, player: Player, room: Room):
         sendJson = {"room": room.joinCode}
-        player.player.send_json(sendJson)
+        await player.player.send_json(sendJson)
 
 
 manager = ConnectionManager()
@@ -135,7 +138,7 @@ async def get():
 @app.websocket("/ws/match")
 async def ws_match(ws: WebSocket):
     player = await manager.connect(ws)
-    room = None
+    room : Room = None
     try:
         while True:
             msg: dict = await ws.receive_json()
@@ -143,29 +146,23 @@ async def ws_match(ws: WebSocket):
             
             match cmd:
                 case "join":
-                    room = manager.queue(player)
+                    print('he did it')
+                    room = await manager.queue(player)
                 case "text":
                     if(room != None):
                         room.broadcast(msg['message'])
                     else:
                         print('oopsies')
+                case 'ready':
+                    await room.start()
+                case _:
+                    print('oh no')
+                
 
     except WebSocketDisconnect:
-        # if a socket drops before pairing or mid-game, clean up:
-        if ws in manager.tellersQueue:  manager.tellersQueue.remove(ws)
-        if ws in manager.guessersQueue: manager.guessersQueue.remove(ws)
-        # find and tear down any room containing ws
+        if ws in manager.tellerQueue:  manager.tellerQueue.remove(ws)
+        if ws in manager.guesserQueue: manager.guesserQueue.remove(ws)
         for room in manager.roomList:
             if ws in (room.teller, room.guesser):
                 await room.end(winner=("guesser" if ws is room.teller else "teller"),
                                reason="disconnect")
-
-
-
-async def matchmaking():
-    while True:
-        manager.instantiateRoom()
-        await time.sleep(1)
-
-
-matchmaking()
