@@ -3,28 +3,36 @@ import { Welcome } from "../welcome/welcome";
 import React, { useEffect, useState, useCallback } from "react";
 import type App from "~/root";
 import { Link } from "react-router";
-import { redirect } from "react-router";
-import type { userType } from "~/types";
-import useWebSocket from "react-use-websocket";
+import { redirect, useNavigate } from "react-router";
+import type { roomNavType, userType } from "~/types";
+import { useWebSocketContext } from "~/contexts/WebSocketContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Emoji GUess" },
+    { title: "Emoji Guess" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }
 
 export default function Home() {
 
+  let navigate = useNavigate()
   const [stats, setStats] = useState<userType>()
   const [joindropDown, setjoinDropDown] = useState(false)
   const [codeDD, setcodeDD] = useState(false)
   const [firstLoad, setfirstLoad] = useState(false)
   
-  const {sendJsonMessage, lastMessage, readyState} = useWebSocket('ws://localhost:8000/ws/match', {
-    share: false,
-    shouldReconnect : () => true,
-  })
+  const {sendJsonMessage, lastMessage, readyState} = useWebSocketContext();
+
+  async function triggerRedirect(room: string, id: string){
+    const userString : string | null = localStorage.getItem("EmojiGuessUser")
+    if(userString){
+      const userJSON : userType = JSON.parse(userString)
+      userJSON['id'] = id;
+      localStorage.setItem("EmojiGuessUser", JSON.stringify(userJSON))
+      await navigate(`/game/${room}`)
+    }
+  }
 
   useEffect(() => {
     if(firstLoad){
@@ -39,22 +47,19 @@ export default function Home() {
       setStats(userJSON)
     } 
     setfirstLoad(true)
-    {
-      return () => {
-
-      }
-    }
   }, [])
 
   useEffect(()=>{
     if(firstLoad){
       if(lastMessage){
-        messageJson : JSON = JSON.parse(lastMessage.data)
-        console.log('received data', lastMessage.data)
-        redirect('/game/'+lastMessage.data['room'])
+        const messageJson : roomNavType = JSON.parse(lastMessage.data)
+        console.log('received data', messageJson)
+        triggerRedirect(messageJson['room'], messageJson['id'])
       }
     }
   },[lastMessage])
+
+
 
   async function handleNavigate(guesser: boolean){
     if(firstLoad){
@@ -68,7 +73,7 @@ export default function Home() {
       }
       sendJsonMessage(joinJson)
     } else {
-      console.log("hello")
+      console.log("not loaded")
     }
   }
 
@@ -85,7 +90,7 @@ export default function Home() {
       localStorage.setItem("EmojiGuessUser", JSON.stringify(userJSON))
       setStats(userJSON)
     } else {
-      const newString : userType= {name: name, wins: 0}
+      const newString : userType= {name: name, wins: 0, id: null}
       localStorage.setItem("EmojiGuessUser", JSON.stringify(newString))
       setStats(newString)
     }

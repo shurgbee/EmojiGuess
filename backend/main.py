@@ -5,7 +5,7 @@ from enum import Enum
 import json
 import random
 import string
-import time
+import uuid
 import asyncio
 
 app = FastAPI()
@@ -30,6 +30,7 @@ class Player:
         self.player = player
         self.name = name
         self.guesser = guesser
+        self.uuid = str(uuid.uuid4())
         pass
 
 class Room:
@@ -113,10 +114,10 @@ class ConnectionManager:
             room = Room(guesser, teller)
             await self.routing(guesser, room)
             await self.routing(teller, room)
-            print("yes")
+            print("Room instantiated")
             return room
         else:
-            print("no")
+            print("Room not instantiated")
             return None
 
     async def broadcast(self, websocket: WebSocket, message: str):
@@ -124,7 +125,8 @@ class ConnectionManager:
             await conn.send_text(message)
 
     async def routing(self, player: Player, room: Room):
-        sendJson = {"room": room.joinCode}
+        sendJson = {"room": room.joinCode,
+                    "id": player.uuid}
         await player.player.send_json(sendJson)
 
 
