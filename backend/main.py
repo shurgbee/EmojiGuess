@@ -52,6 +52,8 @@ class Room:
                  "message":message,
                  "self": player.player == self.teller.player}
         await self.teller.player.send_json(tJson)
+        print("sent message: ", message)
+        pass
 
     async def start(self):
         self.ready += 1
@@ -69,19 +71,30 @@ class Room:
             self.timer = asyncio.create_task(self.countdown())
             await self.guesser.player.send_json({"cmd":"timer"})
             await self.teller.player.send_json({"cmd":"timer"})
-            await self.timer
+            print('before')
+            try:
+                self.timer
+            except asyncio.CancelledError:
+                pass
+            print('after')
             await self.end()
         else: 
             print("Ready:"+str(self.ready))
 
     async def countdown(self):
         await asyncio.sleep(30)
-        print("this shouldn't print early")
         await self.end()
 
     async def end(self):
-        tempVar = await self.timer.cancel()
-        print(tempVar)
+        try:
+            tempVar = self.timer.cancel()
+        except asyncio.exceptions.CancelledError:
+            print('task cancelled')
+        finally:
+            if(tempVar):
+                print("ended early")
+            else:
+                print("Game Ended")
 
 
 class ConnectionManager:
@@ -158,6 +171,7 @@ async def ws_match(ws: WebSocket):
     room : Room = None
     try:
         while True:
+            print('waiting')
             msg: dict = await ws.receive_json()
             cmd = msg.get("cmd")
             print('cmd received', msg) 
@@ -184,5 +198,4 @@ async def ws_match(ws: WebSocket):
         if ws in manager.guesserQueue: manager.guesserQueue.remove(ws)
         for room in manager.roomList.values():
             if ws in (room.teller, room.guesser):
-                await room.end(winner=("guesser" if ws is room.teller else "teller"),
-                               reason="disconnect")
+                await room.end()

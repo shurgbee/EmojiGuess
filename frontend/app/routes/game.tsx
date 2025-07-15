@@ -65,6 +65,7 @@ export default function Game({ params }: Route.LoaderArgs) {
           let newmsgdata: messageType = {"message": data['message'], "self": data["self"]}
           newMessages.push(newmsgdata)
           setMessages(newMessages)
+          break;
         default:
           console.log('data not processed:', data['cmd'])
           break;
@@ -73,7 +74,6 @@ export default function Game({ params }: Route.LoaderArgs) {
   },[lastMessage])
 
   function handleTimer(){
-    console.log('running handle')
     if(timerRef.current == 0){
       handleEnd()
     } else {
@@ -91,9 +91,6 @@ export default function Game({ params }: Route.LoaderArgs) {
   }
 
   async function sendText(text: string){
-    if(!guesser){
-      //check to see if message only has emojis
-    }
     console.log(text)
     sendJsonMessage(
       {"cmd":"message",
@@ -119,10 +116,9 @@ export default function Game({ params }: Route.LoaderArgs) {
       <GameHeader roomCode={params.roomCode} timer={timer} guesser={guesser} word={word} />
       <div className="grow h-[84vh] w-full">
         Hi
-        {messages.map((message) =>
-        <div>
-          <p>{message.self}</p>
-          <p>{message.message}</p>
+        {messages.map((message, index) =>
+        <div key={index}>
+          <p className={message.self ? "text-left" : "text-right"}>{message.message}</p>
         </div>
         )}
       </div>
@@ -130,6 +126,7 @@ export default function Game({ params }: Route.LoaderArgs) {
         <form onSubmit={(e) => {
           e.preventDefault();
           sendText(e.target[0].value);
+          e.target[0].value = ""
         }}>
           <input className="w-full bg-stone-600 rounded-xl h-[5vh] px-2" placeholder="Type here"/>
         </form>
