@@ -57,6 +57,7 @@ export default function Home() {
         triggerRedirect(messageJson['room'], messageJson['id'])
       }
     }
+
   },[lastMessage])
 
 

@@ -38,14 +38,20 @@ class Room:
         self.ready = 0
         self.guesser = guesser
         self.teller : Player = teller
-        self.word = "Beans"
+        self.word = "Chair"
         self.joinCode = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         self.timer = None
         pass
 
-    def broadcast(message: str, player: Player):
-        if(not player.guesser):
-            print('filter for emojis')
+    async def broadcast(self, message: str, player: Player):
+        gJson = {"cmd": "message",
+                 "message":message,
+                 "self": player.player == self.guesser.player}
+        await self.guesser.player.send_json(gJson)
+        tJson = {"cmd": "message",
+                 "message":message,
+                 "self": player.player == self.teller.player}
+        await self.teller.player.send_json(tJson)
 
     async def start(self):
         self.ready += 1
@@ -61,22 +67,27 @@ class Room:
             }
             await self.guesser.player.send_json(guesserJson)
             self.timer = asyncio.create_task(self.countdown())
+            await self.guesser.player.send_json({"cmd":"timer"})
+            await self.teller.player.send_json({"cmd":"timer"})
+            await self.timer
             await self.end()
         else: 
-            print('waiting for other player') 
+            print("Ready:"+str(self.ready))
 
     async def countdown(self):
         await asyncio.sleep(30)
+        print("this shouldn't print early")
         await self.end()
 
     async def end(self):
-        await self.timer.cancel()
+        tempVar = await self.timer.cancel()
+        print(tempVar)
 
 
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
-        self.roomList: list[Room] = []
+        self.roomList: dict[str,Room] = {} 
         self.guesserQueue: list[Player] = []
         self.tellerQueue: list[Player] = []
 
@@ -92,7 +103,7 @@ class ConnectionManager:
 
     async def queue(self, player: Player):
         self.guesserQueue.append(player) if player.guesser else self.tellerQueue.append(player)
-        return await self.instantiateRoom()
+        await self.instantiateRoom()
 
     def disconnect(self, player: Player):
         self.active_connections.remove(player.player)
@@ -112,13 +123,12 @@ class ConnectionManager:
             guesser = self.guesserQueue.pop(0)
             teller = self.tellerQueue.pop(0)
             room = Room(guesser, teller)
+            self.roomList[room.joinCode] = room
             await self.routing(guesser, room)
             await self.routing(teller, room)
             print("Room instantiated")
-            return room
         else:
             print("Room not instantiated")
-            return None
 
     async def broadcast(self, websocket: WebSocket, message: str):
         for conn in self.active_connections:
@@ -136,6 +146,11 @@ manager = ConnectionManager()
 async def get():
     return "Server is running!" 
 
+@app.get("/roomList")
+async def roomList():
+    print(manager.roomList)
+    return "test"
+
 
 @app.websocket("/ws/match")
 async def ws_match(ws: WebSocket):
@@ -145,26 +160,29 @@ async def ws_match(ws: WebSocket):
         while True:
             msg: dict = await ws.receive_json()
             cmd = msg.get("cmd")
-            
+            print('cmd received', msg) 
             match cmd:
                 case "join":
                     print('he did it')
-                    room = await manager.queue(player)
-                case "text":
+                    await manager.queue(player)
+                case "message":
                     if(room != None):
-                        room.broadcast(msg['message'])
+                        await room.broadcast(msg['message'], player)
                     else:
                         print('oopsies')
                 case 'ready':
-                    await room.start()
+                    if(room == None):
+                        room = manager.roomList.get(msg.get("room"))
+                        await room.start()
                 case _:
                     print('oh no')
+                    print(msg)
                 
 
     except WebSocketDisconnect:
         if ws in manager.tellerQueue:  manager.tellerQueue.remove(ws)
         if ws in manager.guesserQueue: manager.guesserQueue.remove(ws)
-        for room in manager.roomList:
+        for room in manager.roomList.values():
             if ws in (room.teller, room.guesser):
                 await room.end(winner=("guesser" if ws is room.teller else "teller"),
                                reason="disconnect")
