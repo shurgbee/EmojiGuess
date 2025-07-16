@@ -6,6 +6,7 @@ import { Link } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import type { roomNavType, userType } from "~/types";
 import { useWebSocketContext } from "~/contexts/WebSocketContext";
+import EndModal from '../components/endModal'
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -64,13 +65,9 @@ export default function Home() {
 
   async function handleNavigate(guesser: boolean){
     if(firstLoad){
-      const sendJson = {
-        "name": stats?.name,
-        "guesser": guesser
-      }
-      sendJsonMessage(sendJson)
       const joinJson = {
-        "cmd": "join"
+        "cmd": "join",
+        "guesser": guesser
       }
       sendJsonMessage(joinJson)
     } else {

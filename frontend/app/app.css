@@ -110,3 +110,14 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+
+@theme{
+  --fadeInAnim: fadeIn 1s ease-in-out 1;
+
+  @keyframes fadeIn {
+    from {opacity: 0%}
+    to {opacity: 100%;}
+  }
+
+}
