@@ -31,6 +31,7 @@ export default function Home() {
       const userJSON : userType = JSON.parse(userString)
       userJSON['id'] = id;
       localStorage.setItem("EmojiGuessUser", JSON.stringify(userJSON))
+      console.log('trigger')
       await navigate(`/game/${room}`)
     }
   }
@@ -57,6 +58,9 @@ export default function Home() {
         console.log('received data', messageJson)
         triggerRedirect(messageJson['room'], messageJson['id'])
       }
+    }
+    return () => {
+      setfirstLoad(false)
     }
 
   },[lastMessage])

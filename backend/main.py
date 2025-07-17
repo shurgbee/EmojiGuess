@@ -14,15 +14,18 @@ origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
     "http://localhost",
+    "http://localhost:8000",
     "http://localhost:8080",
+    "http://localhost:3000",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"], #FIX
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origin_regex=".*",
 )
 
 
@@ -104,8 +107,10 @@ class Room:
                 case EndType.DISCONNECT:
                     print('a player has disconnected')
                     sJSon = {"cmd":"disconnect"}
-                    await self.guesser.player.send_json(sJSon)
-                    await self.teller.player.send_json(sJSon)
+                    if (None == self.guesser):
+                        await self.teller.player.send_json(sJSon)
+                    else:
+                        await self.guesser.player.send_json(sJSon)
                 case EndType.WIN:
                     print('a player has won')
                     await self.endScreen(True)
@@ -132,12 +137,8 @@ class ConnectionManager:
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        data : JSONResponse= await websocket.receive_json()
-        print("players has connected",data) 
-        name = data['name']
-        player = Player(websocket, name)
         self.active_connections.append(websocket)
-        return player
+        return websocket
 
     async def queue(self, player: Player):
         self.guesserQueue.append(player) if player.guesser else self.tellerQueue.append(player)
@@ -183,7 +184,8 @@ async def activeConnections():
 
 @app.websocket("/ws/match")
 async def ws_match(ws: WebSocket):
-    player = await manager.connect(ws)
+    player: Player = None
+    await manager.connect(ws)
     room : Room = None
     try:
         while True:
@@ -201,16 +203,26 @@ async def ws_match(ws: WebSocket):
                     else:
                         print('oopsies')
                 case 'ready':
-                    if(room == None):
-                        room = manager.roomList.get(msg.get("room"))
-                        print(room.joinCode)
-                        await room.start()
+                    room = manager.roomList.get(msg.get("room"))
+                    print(room.joinCode)
+                    await room.start()
+                case 'init':
+                    print("player has connected",msg) 
+                    name = msg['name']
+                    player = Player(ws, name)
                 case _:
                     print('oh no')
                     print(msg)
+            print(manager.active_connections)
     except WebSocketDisconnect:
+        if player != None:
+            print(player.name, " disconnected")
+        if ws in manager.active_connections: manager.active_connections.remove(ws)
         if ws in manager.tellerQueue:  manager.tellerQueue.remove(ws)
         if ws in manager.guesserQueue: manager.guesserQueue.remove(ws)
-        for room in manager.roomList.values():
-            if ws in (room.teller, room.guesser):
-                await room.end(EndType.DISCONNECT)
+        if room != None:
+            if(room.guesser == player):
+                room.guesser = None
+            else:
+                room.teller = None
+            await room.end(EndType.DISCONNECT)

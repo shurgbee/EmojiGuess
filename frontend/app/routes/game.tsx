@@ -81,6 +81,11 @@ export default function Game({ params }: Route.LoaderArgs) {
           if(timerVar.current != null){
             clearInterval(timerVar.current)
           }
+          break;
+        case "disconnect":
+          alert("The other player has disconnected: You will be returned to lobby in 3 seconds")
+          setTimeout(() => navigate('/'), 3000)
+          break;
         default:
           console.log('data not processed:', data['cmd'])
           break;

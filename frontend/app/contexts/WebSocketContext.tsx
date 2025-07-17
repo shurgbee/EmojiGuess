@@ -26,6 +26,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
     const userString = localStorage.getItem("EmojiGuessUser")
     if(userString){
       setUserInfo(JSON.parse(userString))
+    } else {
+      const newString = {cmd: "init",name: "", wins: 0, id: null}
+      localStorage.setItem("EmojiGuessUser", JSON.stringify(newString))
+      setUserInfo(newString)
     }
   },[])
 
@@ -35,7 +39,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
     reconnectAttempts: 10,
     reconnectInterval: 3000,
     onOpen: () => {
-      sendJsonMessage(userInfo)
+      if(userInfo != null){
+        const newString = {cmd: "init",name: userInfo.name, wins: userInfo.wins, id: null}
+        sendJsonMessage(newString)
+      }
     }
   });
 
