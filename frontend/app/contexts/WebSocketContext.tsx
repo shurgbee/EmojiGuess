@@ -19,7 +19,7 @@ interface WebSocketProviderProps {
 }
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
-  const WS_URL = process.env.BACKEND_URL;
+  const WS_URL = import.meta.env.BACKEND_URL;
   const [userInfo, setUserInfo] = useState<userType>()
 
   useEffect(()=>{
