@@ -15,13 +15,13 @@ origins = [
     "https://localhost.tiangolo.com",
     "http://localhost",
     "http://localhost:8000",
-    "http://localhost:8080",
     "http://localhost:3000",
+    "https://emojiguess.onrender.com"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], #FIX
+    allow_origins=origins, #FIX
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
