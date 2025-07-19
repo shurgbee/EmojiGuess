@@ -8,7 +8,7 @@ interface WebSocketContextType {
   lastMessage: MessageEvent | null;
   readyState: number;
   connectionStatus: string;
-  userInfo: userType;
+  userInfo: userType | undefined;
   setUserInfo: React.Dispatch<React.SetStateAction<userType | undefined>>
 }
 
@@ -19,7 +19,7 @@ interface WebSocketProviderProps {
 }
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
-  const WS_URL = "wss://emojiguess-qyx6.onrender.com/ws/match";
+  const WS_URL = import.meta.env.PROD ? "wss://emojiguess-qyx6.onrender.com/ws/match" : "ws://localhost:8000/ws/match";
   const [userInfo, setUserInfo] = useState<userType>()
 
   useEffect(()=>{
@@ -31,7 +31,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
       localStorage.setItem("EmojiGuessUser", JSON.stringify(newString))
       setUserInfo(newString)
     }
-  },[])
+  },[]) 
 
   const { sendJsonMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
     share: true, 

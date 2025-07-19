@@ -7,6 +7,7 @@ import { data, Navigate, useNavigate } from "react-router";
 import type { messageType } from "~/types";
 import GameHeader from "~/components/gameHeader";
 import EndModal from "~/components/endModal";
+import WSConDot from "~/components/ConnDot";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -74,12 +75,14 @@ export default function Game({ params }: Route.LoaderArgs) {
           }
           break;
         case "end":
-          console.log("Game has ended", data);
-          win.current = data['win'];
-          setWord(data['word'])
-          setGameEnd(true)
-          if(timerVar.current != null){
-            clearInterval(timerVar.current)
+          if(!gameEnd){
+            console.log("Game has ended", data);
+            win.current = data['win'];
+            setWord(data['word'])
+            setGameEnd(true)
+            if(timerVar.current != null){
+              clearInterval(timerVar.current)
+            }
           }
           break;
         case "disconnect":
@@ -131,18 +134,7 @@ export default function Game({ params }: Route.LoaderArgs) {
     <>
     {gameEnd ? <EndModal win={win.current} word={word} countdown={timer}/>: <></>}
     <div className="flex flex-col content-center justify-end w-full gap">
-      {/* <div className="flex flex-col content-center items-center justify-center w-full">
-          <h1 className="text-2xl font-bold mb-4">Game Room: {params.roomCode}</h1>
-          <div className="mb-4">
-            <span className={`px-3 py-1 rounded-full text-sm ${
-              connectionStatus === 'Open' ? 'bg-green-500 text-white' : 
-              connectionStatus === 'Connecting' ? 'bg-yellow-500 text-black' : 
-              'bg-red-500 text-white'
-            }`}>
-              WebSocket: {connectionStatus}
-            </span>
-          </div>
-      </div> */}
+      <WSConDot connectionStatus={connectionStatus}/>
       <GameHeader roomCode={params.roomCode} timer={timer} guesser={guesser} word={word} />
       <div className="w-full gap-1 flex flex-col h-[84vh] overflow-y-scroll overscroll-contain">
         {messages.map((message, index) =>

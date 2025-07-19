@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import type App from "~/root";
 import { useWebSocketContext } from "~/contexts/WebSocketContext";
 import { data, useNavigate } from "react-router";
-import type { messageType } from "~/types";
+import type { messageType, userType } from "~/types";
 
 type EndModalProps = {
     win: boolean
@@ -30,6 +30,17 @@ export default function endModal({win, word}: EndModalProps) {
 
   useEffect(()=>{
     timerObj.current = setInterval(() => countdown(), 1000)
+    if(win){
+      const userString = localStorage.getItem("EmojiGuessUser")
+      if (userString){
+        let userInfo: userType = JSON.parse(userString)
+        console.log('what')
+        userInfo['wins'] += 1 
+        localStorage.setItem("EmojiGuessUser", JSON.stringify(userInfo))
+      } else{
+        console.log("what")
+      }
+    }
     return () => {
       if (timerObj.current !== null) {
         clearInterval(timerObj.current);

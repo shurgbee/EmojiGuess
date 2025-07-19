@@ -2,7 +2,6 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from enum import Enum
-import json
 import random
 import string
 import uuid
@@ -28,6 +27,59 @@ app.add_middleware(
     allow_origin_regex=".*",
 )
 
+emoji_words = [
+    "sun",
+    "moon",
+    "star",
+    "cloud",
+    "rain",
+    "snow",
+    "fire",
+    "water",
+    "tree",
+    "flower",
+    "leaf",
+    "mountain",
+    "beach",
+    "rainbow",
+    "apple",
+    "banana",
+    "cherry",
+    "strawberry",
+    "pizza",
+    "burger",
+    "fries",
+    "donut",
+    "cake",
+    "icecream",
+    "coffee",
+    "tea",
+    "beer",
+    "wine",
+    "chocolate",
+    "car",
+    "bus",
+    "train",
+    "airplane",
+    "rocket",
+    "house",
+    "phone",
+    "computer",
+    "clock",
+    "book",
+    "pencil",
+    "guitar",
+    "piano",
+    "drum",
+    "dog",
+    "cat",
+    "fish",
+    "bird",
+    "frog",
+    "snake",
+    "lion"
+]
+
 
 class EndType(Enum):
     DISCONNECT = 1
@@ -47,7 +99,7 @@ class Room:
         self.ready = 0
         self.guesser = guesser
         self.teller : Player = teller
-        self.word = "Chair"
+        self.word = random.choice(emoji_words)
         self.joinCode = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         self.timer = None
         pass
@@ -62,7 +114,7 @@ class Room:
                  "self": player.player == self.teller.player}
         await self.teller.player.send_json(tJson)
         print("sent message: ", message)
-        if(message.find(self.word) != -1):
+        if(message.lower().find(self.word) != -1):
             print("word found!")
             await self.end(EndType.WIN)
         pass
@@ -141,6 +193,13 @@ class ConnectionManager:
         return websocket
 
     async def queue(self, player: Player):
+        # There should be a more efficient way to do this but it would break
+        if self.guesserQueue.count(player) != 0:
+            self.guesserQueue.remove(player)
+            print("Old Player")
+        if self.tellerQueue.count(player) != 0:
+            self.tellerQueue.remove(player)
+            print("Old Player")
         self.guesserQueue.append(player) if player.guesser else self.tellerQueue.append(player)
         await self.instantiateRoom()
     
@@ -151,6 +210,8 @@ class ConnectionManager:
                     room.teller = player
     
     async def instantiateRoom(self):
+        print(1, len(self.guesserQueue) > 0)
+        print(2, len(self.tellerQueue) > 0)
         if len(self.guesserQueue) > 0 and len(self.tellerQueue) > 0:
             guesser = self.guesserQueue.pop(0)
             teller = self.tellerQueue.pop(0)
@@ -213,7 +274,6 @@ async def ws_match(ws: WebSocket):
                 case _:
                     print('oh no')
                     print(msg)
-            print(manager.active_connections)
     except WebSocketDisconnect:
         if player != None:
             print(player.name, " disconnected")
