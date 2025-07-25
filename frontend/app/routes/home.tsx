@@ -22,7 +22,6 @@ export default function Home() {
   const [stats, setStats] = useState<userType>()
   const [joindropDown, setjoinDropDown] = useState(false)
   const [codeDD, setcodeDD] = useState(false)
-  const [firstLoad, setfirstLoad] = useState(false)
   
   const {sendJsonMessage, lastMessage, readyState, connectionStatus} = useWebSocketContext();
 
@@ -38,9 +37,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if(firstLoad){
       console.log("current state is "+readyState)
-    }
   }, [readyState])
 
   useEffect(() => {
@@ -49,19 +46,24 @@ export default function Home() {
       const userJSON = JSON.parse(userString)
       setStats(userJSON)
     } 
-    setfirstLoad(true)
   }, [])
 
   useEffect(()=>{
-    if(firstLoad){
-      if(lastMessage){
-        const messageJson : roomNavType = JSON.parse(lastMessage.data)
-        console.log('received data', messageJson)
-        triggerRedirect(messageJson['room'], messageJson['id'])
-      }
-    }
-    return () => {
-      setfirstLoad(false)
+    if(lastMessage != null){
+      let data = JSON.parse(lastMessage.data)
+      console.log("data: ", data["cmd"])
+      switch(data['cmd']){
+        case "mm":
+        alert(data['message'])
+          break;
+        case "roomNav":
+          const messageJson : roomNavType = JSON.parse(lastMessage.data);
+          console.log('received data', messageJson)
+          triggerRedirect(messageJson['room'], messageJson['id'])
+          break;
+        default:
+          console.log("Data not processed: ", lastMessage.data)
+      } 
     }
 
   },[lastMessage])
@@ -69,15 +71,11 @@ export default function Home() {
 
 
   async function handleNavigate(guesser: boolean){
-    if(firstLoad){
       const joinJson = {
         "cmd": "join",
         "guesser": guesser
       }
       sendJsonMessage(joinJson)
-    } else {
-      console.log("not loaded")
-    }
   }
 
   function handleCodeNavigate(code: string){

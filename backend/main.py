@@ -201,7 +201,11 @@ class ConnectionManager:
             self.tellerQueue.remove(player)
             print("Old Player")
         self.guesserQueue.append(player) if player.guesser else self.tellerQueue.append(player)
-        await self.instantiateRoom()
+        didJoin: bool= await self.instantiateRoom()
+        if not didJoin:
+            sendJson = {"cmd":"mm",
+                        "message": f'You are currently in line for matchmaking: There are currently {len(self.guesserQueue)} guessers and {len(self.tellerQueue)} tellers in queue.'}
+            await player.player.send_json(sendJson)
     
     def joinRoom(self, code: str, player: Player):
         for room in self.roomList:
@@ -220,11 +224,15 @@ class ConnectionManager:
             await self.routing(guesser, room)
             await self.routing(teller, room)
             print("Room instantiated")
+            return True
         else:
             print("Room not instantiated")
+            return False
+            
 
     async def routing(self, player: Player, room: Room):
-        sendJson = {"room": room.joinCode,
+        sendJson = {"cmd": "roomNav",
+                    "room": room.joinCode,
                     "id": player.uuid}
         await player.player.send_json(sendJson)
 
@@ -275,11 +283,11 @@ async def ws_match(ws: WebSocket):
                     print('oh no')
                     print(msg)
     except WebSocketDisconnect:
+        if ws in manager.active_connections: manager.active_connections.remove(ws)
         if player != None:
             print(player.name, " disconnected")
-        if ws in manager.active_connections: manager.active_connections.remove(ws)
-        if ws in manager.tellerQueue:  manager.tellerQueue.remove(ws)
-        if ws in manager.guesserQueue: manager.guesserQueue.remove(ws)
+            if player in manager.tellerQueue:  manager.tellerQueue.remove(player)
+            if player in manager.guesserQueue: manager.guesserQueue.remove(player)
         if room != None:
             if(room.guesser == player):
                 room.guesser = None
