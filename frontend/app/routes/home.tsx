@@ -7,6 +7,7 @@ import { redirect, useNavigate } from "react-router";
 import type { roomNavType, userType } from "~/types";
 import { useWebSocketContext } from "~/contexts/WebSocketContext";
 import EndModal from '../components/endModal'
+import WSConDot from "~/components/ConnDot";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -21,9 +22,8 @@ export default function Home() {
   const [stats, setStats] = useState<userType>()
   const [joindropDown, setjoinDropDown] = useState(false)
   const [codeDD, setcodeDD] = useState(false)
-  const [firstLoad, setfirstLoad] = useState(false)
   
-  const {sendJsonMessage, lastMessage, readyState} = useWebSocketContext();
+  const {sendJsonMessage, lastMessage, readyState, connectionStatus} = useWebSocketContext();
 
   async function triggerRedirect(room: string, id: string){
     const userString : string | null = localStorage.getItem("EmojiGuessUser")
@@ -37,9 +37,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if(firstLoad){
       console.log("current state is "+readyState)
-    }
   }, [readyState])
 
   useEffect(() => {
@@ -48,19 +46,24 @@ export default function Home() {
       const userJSON = JSON.parse(userString)
       setStats(userJSON)
     } 
-    setfirstLoad(true)
   }, [])
 
   useEffect(()=>{
-    if(firstLoad){
-      if(lastMessage){
-        const messageJson : roomNavType = JSON.parse(lastMessage.data)
-        console.log('received data', messageJson)
-        triggerRedirect(messageJson['room'], messageJson['id'])
-      }
-    }
-    return () => {
-      setfirstLoad(false)
+    if(lastMessage != null){
+      let data = JSON.parse(lastMessage.data)
+      console.log("data: ", data["cmd"])
+      switch(data['cmd']){
+        case "mm":
+        alert(data['message'])
+          break;
+        case "roomNav":
+          const messageJson : roomNavType = JSON.parse(lastMessage.data);
+          console.log('received data', messageJson)
+          triggerRedirect(messageJson['room'], messageJson['id'])
+          break;
+        default:
+          console.log("Data not processed: ", lastMessage.data)
+      } 
     }
 
   },[lastMessage])
@@ -68,15 +71,11 @@ export default function Home() {
 
 
   async function handleNavigate(guesser: boolean){
-    if(firstLoad){
       const joinJson = {
         "cmd": "join",
         "guesser": guesser
       }
       sendJsonMessage(joinJson)
-    } else {
-      console.log("not loaded")
-    }
   }
 
   function handleCodeNavigate(code: string){
@@ -101,7 +100,9 @@ export default function Home() {
   return (
     <>
     <div className="flex items-center justify-center w-screen">
-      <div className="flex flex-col self-center">
+      <div className="flex flex-col self-center w-[40vw]">
+        <WSConDot connectionStatus={connectionStatus}/>
+          <p className="text-red-500 text-xl text-wrap absolute top-1/8 w-[40vw]">This site (and the server) is hosted on Render.com, which shuts down servers due to inactivity. Please allow 30 seconds - 1 min for the server to wake up</p>
           <h1 className='font-black mb-6'>
             {stats ? 
             "Welcome Back " + stats.name
@@ -157,20 +158,24 @@ export default function Home() {
                     handleCodeNavigate(input.value)
                   } 
                   }>
-                    <input className="bg-stone-900 border-4 rounded-2xl w-md p-2" placeholder="Type code here"></input>
+                    <input className="bg-stone-900 border-4 rounded-2xl p-2" placeholder="Type code here"></input>
                   </form>
                 </>
                 :
                 <>
                 <button onClick={(e) => {
                   e.preventDefault()
-                  setcodeDD(!codeDD)
+                  alert("Coming Soon!")
+                  // setcodeDD(!codeDD)
                   }}>
                   Join Room with Code
                 </button>
                 </>
                 }
-                <button>
+                <button onClick={(e)=>{
+                  e.preventDefault()
+                  alert("Coming Soon!")
+                }}>
                   <p>Create Room</p>
                 </button>
               </div>

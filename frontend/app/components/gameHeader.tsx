@@ -13,6 +13,7 @@ type GameHeaderProps = {
 };
 
 export default function GameHeader({timer, guesser, word, roomCode}: GameHeaderProps) {
+  word = word ? word[0].toUpperCase() + word.slice(1) : null 
   return (
     <div className="bg-stone-500 h-[10vh] flex flex-row items-center content-center justify-center gap-20 text-4xl font-bold">
     <p className="">Role: {guesser ? "Guesser" : "Teller"}</p>
