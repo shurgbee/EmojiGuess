@@ -17,6 +17,7 @@ export default function endModal({win, word}: EndModalProps) {
   let timerObj = useRef<NodeJS.Timeout | null>(null)
   let timerRef = useRef<number>(10);
   const [timer, setTimer] = useState<number>(10)
+  let debounce: boolean = true
 
   function countdown(){
     console.log(timerRef)
@@ -30,13 +31,15 @@ export default function endModal({win, word}: EndModalProps) {
 
   useEffect(()=>{
     timerObj.current = setInterval(() => countdown(), 1000)
-    if(win){
+    if(win && debounce){
+      debounce = false
       const userString = localStorage.getItem("EmojiGuessUser")
       if (userString){
         let userInfo: userType = JSON.parse(userString)
-        console.log('what')
+        console.log('bruh')
         userInfo['wins'] += 1 
         localStorage.setItem("EmojiGuessUser", JSON.stringify(userInfo))
+      debounce = true
       } else{
         console.log("what")
       }

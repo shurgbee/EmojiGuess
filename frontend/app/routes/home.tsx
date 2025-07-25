@@ -167,13 +167,17 @@ export default function Home() {
                 <>
                 <button onClick={(e) => {
                   e.preventDefault()
-                  setcodeDD(!codeDD)
+                  alert("Coming Soon!")
+                  // setcodeDD(!codeDD)
                   }}>
                   Join Room with Code
                 </button>
                 </>
                 }
-                <button>
+                <button onClick={(e)=>{
+                  e.preventDefault()
+                  alert("Coming Soon!")
+                }}>
                   <p>Create Room</p>
                 </button>
               </div>
