@@ -19,7 +19,7 @@ interface WebSocketProviderProps {
 }
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
-  const WS_URL = import.meta.env.PROD ? "wss://emojiguess-qyx6.onrender.com/ws/match" : "ws://localhost:8000/ws/match";
+  const WS_URL = import.meta.env.PROD ? import.meta.env.VITE_SERVER_URL : "ws://localhost:8000/ws/match";
   const [userInfo, setUserInfo] = useState<userType>()
 
   useEffect(()=>{

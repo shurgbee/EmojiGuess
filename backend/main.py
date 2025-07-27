@@ -1,6 +1,8 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Annotated, Literal
+from pydantic import BaseModel
 from enum import Enum
 import random
 import string
@@ -214,8 +216,8 @@ class ConnectionManager:
                     room.teller = player
     
     async def instantiateRoom(self):
-        print(1, len(self.guesserQueue) > 0)
-        print(2, len(self.tellerQueue) > 0)
+        print("Guesser Length: ", len(self.guesserQueue))
+        print("Teller Length: ", len(self.tellerQueue))
         if len(self.guesserQueue) > 0 and len(self.tellerQueue) > 0:
             guesser = self.guesserQueue.pop(0)
             teller = self.tellerQueue.pop(0)
@@ -240,7 +242,7 @@ class ConnectionManager:
 manager = ConnectionManager()
     
 @app.get("/")
-async def get():
+async def get() -> str:
     return "Server is running!" 
 
 @app.get("/roomList")

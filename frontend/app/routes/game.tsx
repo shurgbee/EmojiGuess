@@ -124,7 +124,7 @@ export default function Game({ params }: Route.LoaderArgs) {
   }
 
   function trimEmojis(text: string){
-    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F270}]/gu;
+    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2700}-\u{27BF}]|[\u{1F650}-\u{1F67F}]|[\u{2600}-\u{26FF}]|[\u{2100}-\u{1F5FF}]|[\u{1F900}-\u{1F9FF}]|[\u{2600}-\u{2603}]|[\u{26C4}-\u{26CB}]|[\u{1F321}-\u{1F32C}]|[\u{26CC}-\u{26CD}]|[\u{26CF}-\u{26E1}]|[\u{26E8}-\u{26FF}]|[\u{26A2}-\u{26A9}]|[\u{26AD}-\u{26B1}]|[\u{1F400}-\u{1F42C}]|[\u{1F577}-\u{1F578}]|[\u{1F5FB}-\u{1F5FF}]|[\u{1F446}-\u{1F450}]|[\u{1F58E}-\u{1F5A3}]|[\u{1F3FB}-\u{1F3FF}]|[\u{2B00}-\u{2B7F}]/gu;
     const emojis = text.match(emojiRegex) || [];
     const emojisText = emojis.join('');
     return emojisText
@@ -152,16 +152,21 @@ export default function Game({ params }: Route.LoaderArgs) {
           let input = form.elements[0] as HTMLInputElement;
           const emojiTrim = trimEmojis(input.value)
           if(input.value.trim() != ""){
-            if((!guesser && emojiTrim != "")){
-              sendText(emojiTrim);
-              input.value = ""
-            } else if (guesser){
+            if(guesser){
               sendText(input.value);
               input.value = ""
+            } else {
+              if(emojiTrim != ""){
+                sendText(emojiTrim);
+                input.value = ""
+              } else {
+                alert("Tellers can only send Emojis")
+              }
+            }
             }
           }
-        }}>
-          <input className="w-full bg-stone-600 rounded-xl h-[5vh] px-2" placeholder="Type here"/>
+        }>
+          <input className="w-full bg-stone-600 rounded-xl h-[5vh] px-2" placeholder={guesser ? "Type text here" : "Type emojis here (you can only communicate in emojis)"}/>
         </form>
       </div>
     </div>

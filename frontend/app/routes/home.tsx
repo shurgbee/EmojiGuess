@@ -102,7 +102,7 @@ export default function Home() {
     <div className="flex items-center justify-center w-screen">
       <div className="flex flex-col self-center w-[40vw]">
         <WSConDot connectionStatus={connectionStatus}/>
-          <p className="text-red-500 text-xl text-wrap absolute top-1/8 w-[40vw]">This site (and the server) is hosted on Render.com, which shuts down servers due to inactivity. Please allow 30 seconds - 1 min for the server to wake up</p>
+          <p className="text-red-500 text-xl text-wrap top-1/12 w-[40vw]">This site (and the server) is hosted on Render.com, which shuts down servers due to inactivity. Please allow 30 seconds - 1 min for the server to wake up</p>
           <h1 className='font-black mb-6'>
             {stats ? 
             "Welcome Back " + stats.name
@@ -178,6 +178,8 @@ export default function Home() {
                 }}>
                   <p>Create Room</p>
                 </button>
+                <div><p className="font-bold text-2xl text-center">How to play:</p>
+                <p className="text-center ">There are 2 roles in the game: <span className="font-bold">Teller</span> and <span className="font-bold">Guesser</span>. The teller is given a word at the beginning of the round and can <span className="font-bold">only communicate through emojis</span>. The guesser has to use the emojis to guess what the word is (by typing it into chat). The game ends by either the guesser guessing the word or by time running out.</p></div> 
               </div>
           </div>
         </div>
