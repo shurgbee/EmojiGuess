@@ -103,6 +103,7 @@ export default function Home() {
       <div className="flex flex-col self-center w-[40vw]">
         <WSConDot connectionStatus={connectionStatus}/>
           <p className="text-red-500 text-xl text-wrap top-1/12 w-[40vw]">This site (and the server) is hosted on Render.com, which shuts down servers due to inactivity. Please allow 30 seconds - 1 min for the server to wake up</p>
+          <p className="text-yellow-500 text-sm text-wrap top-1/12 pt-2 w-[40vw]">If you're here to check my submission, you can open 2 tabs to test out 2 player interactions. Also thank you for your work :)</p>
           <h1 className='font-black mb-6'>
             {stats ? 
             "Welcome Back " + stats.name
